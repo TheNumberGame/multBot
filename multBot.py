@@ -4,16 +4,27 @@ import pprint
 import discord
 import praw
 
-discord_client = discord.Client()
+event_loop = asyncio.get_event_loop()
+
+discord_client = discord.Client(loop = event_loop)
 reddit = praw.Reddit("multBot")
+mult_subreddit_stream = reddit.subreddit("multBot").stream.submissions(pause_after = -1)
 
 def load_discord_token():
 	with open("discord_credentials.txt") as fp:
 		return fp.read().strip()
 
 def main():
+	event_loop.call_later(5, reddit_callback)
 	discord_client.run(load_discord_token())
 
+def reddit_callback():
+	submission = next(mult_subreddit_stream)
+	while submission is not None:
+		print(submission)
+		submission = next(mult_subreddit_stream)
+	event_loop.call_later(5, reddit_callback)
+	
 @discord_client.event
 async def on_message(message):
 	await on_submission(message, "hot")
