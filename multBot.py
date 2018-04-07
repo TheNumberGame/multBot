@@ -4,10 +4,12 @@ import pprint
 import discord
 import praw
 
+
 event_loop = asyncio.get_event_loop()
 
 discord_client = discord.Client(loop = event_loop)
 reddit = praw.Reddit("multBot")
+PINNED_SUBMISSION = reddit.submission(id="8alcez")
 mult_subreddit_stream = reddit.subreddit("multBot").stream.submissions(pause_after = -1)
 
 def load_discord_token():
@@ -39,8 +41,13 @@ async def on_message(message):
 	await on_submission(message, "new")
 	await on_submission(message, "top")
 	await on_submission(message, "random")
+	await reddit_portal_comment(message)
 
+async def reddit_portal_comment(message):
+	if message.channel.id == "432295161301827595":
+		PINNED_SUBMISSION.reply(message.author.name + ": " + message.content)
 
+	
 async def on_submission(message, category):
 	if message.content.startswith('//' + category):
 		tokens = message.content.split(" ", 1)
