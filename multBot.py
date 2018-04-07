@@ -21,9 +21,13 @@ def main():
 async def reddit_task():
 	submission = next(mult_subreddit_stream)
 	while submission is not None:
+		if submission.saved:
+			submission = next(mult_subreddit_stream)
+			continue
 		await discord_client.send_message(discord_client.get_channel("432274642514739201"), "https://www.reddit.com" + submission.permalink)
-		submission = next(mult_subreddit_stream)
 		
+		submission.save()
+		submission = next(mult_subreddit_stream)
 	event_loop.call_later(5, timed_callback)
 
 def timed_callback():
@@ -34,6 +38,7 @@ async def on_message(message):
 	await on_submission(message, "hot")
 	await on_submission(message, "new")
 	await on_submission(message, "top")
+	await on_submission(message, "random")
 
 
 async def on_submission(message, category):
@@ -45,10 +50,14 @@ async def on_submission(message, category):
 		else:
 			try:
 				subreddit = reddit.subreddit(tokens[1])
-				submission = unstickied_submission(subreddit, category)
+				if category == "random":
+					submission = subreddit.random()
+				else:
+					submission = unstickied_submission(subreddit, category)
 				await discord_client.send_message(message.channel, "https://www.reddit.com" + submission.permalink)
-			except:
+			except Exception as e:
 				await discord_client.send_message(message.channel, "Invalid subreddit")
+				print(e)
 	
 
 def unstickied_submission(subreddit, listing):
