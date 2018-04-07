@@ -22,9 +22,18 @@ async def on_message(message):
 		if len(tokens) == 1:
 			await discord_client.send_message(message.channel, "Give us a real subreddit")
 		else:
-			subreddit = reddit.subreddit(tokens[1])
-			submission = next(subreddit.hot())
-			await discord_client.send_message(message.channel, "https://www.reddit.com" + submission.permalink)
+			try:
+				subreddit = reddit.subreddit(tokens[1])
+				submission = hot_submission(subreddit)
+				await discord_client.send_message(message.channel, "https://www.reddit.com" + submission.permalink)
+			except:
+				await discord_client.send_message(message.channel, "Invalid subreddit")
+	
+def hot_submission(subreddit):
+	for submission in subreddit.hot():
+		if not submission.stickied:
+			break
+	return submission
 	
 def main_reddit():
 	subreddit = reddit.subreddit("multBot")
