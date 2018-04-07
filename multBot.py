@@ -13,6 +13,12 @@ def load_discord_token():
 def main():
 	discord_client.run(load_discord_token())
 
+@discord_client.event
+async def on_message(message):
+	if message.content.startswith('//top'):
+		print(message.content)
+		await discord_client.send_message(message.channel, "message received")
+	
 def main_reddit():
 	reddit = praw.Reddit("multBot")
 	subreddit = reddit.subreddit("multBot")
