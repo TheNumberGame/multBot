@@ -15,15 +15,19 @@ def load_discord_token():
 		return fp.read().strip()
 
 def main():
-	event_loop.call_later(5, reddit_callback)
+	event_loop.call_later(5, timed_callback)
 	discord_client.run(load_discord_token())
 
-def reddit_callback():
+async def reddit_task():
 	submission = next(mult_subreddit_stream)
 	while submission is not None:
-		print(submission)
+		await discord_client.send_message(discord_client.get_channel("432274642514739201"), "https://www.reddit.com" + submission.permalink)
 		submission = next(mult_subreddit_stream)
-	event_loop.call_later(5, reddit_callback)
+		
+	event_loop.call_later(5, timed_callback)
+
+def timed_callback():
+	event_loop.create_task(reddit_task())
 	
 @discord_client.event
 async def on_message(message):
