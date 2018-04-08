@@ -3,6 +3,9 @@ import pprint
 
 import discord
 import praw
+import logging
+
+logging.basicConfig(level=logging.INFO)
 
 
 event_loop = asyncio.get_event_loop()
@@ -32,9 +35,13 @@ async def reddit_task():
 		submission = next(submission_stream)
 	
 	comment = next(comment_stream)
+	discord_portal_channel = discord_client.get_channel("432295161301827595")
+	member = discord_portal_channel.server.me
 	while comment is not None:
 		if comment.submission == PINNED_SUBMISSION and comment.author != reddit.config.username and not comment.saved:
-			await discord_client.send_message(discord_client.get_channel("432295161301827595"), comment.author.name+": "+comment.body)
+			await discord_client.change_nickname(member, comment.author.name)
+			await discord_client.send_message(discord_portal_channel, comment.body)
+			await discord_client.change_nickname(member, DISCORD_USERNAME)
 			comment.save()
 		comment = next(comment_stream)
 	
@@ -45,16 +52,27 @@ def timed_callback():
 	
 @discord_client.event
 async def on_message(message):
+	await on_poll(message)
 	await on_submission(message, "hot")
 	await on_submission(message, "new")
 	await on_submission(message, "top")
 	await on_submission(message, "random")
+	await on_submission(message, "rising")
+	await on_submission(message, "controversial")
+	await on_submission(message, "gilded")
 	await reddit_portal_comment(message)
+	
 
+#@discord_client.event
+#async def on_reaction_add(reaction, user):
+		
+	
 async def reddit_portal_comment(message):
 	if message.channel.id == "432295161301827595" and message.author.name != DISCORD_USERNAME:
-		PINNED_SUBMISSION.reply(message.author.name + ": " + message.content)
-	
+		if not message.content == "":
+			PINNED_SUBMISSION.reply(message.author.name + ": " + message.content)
+		else:
+			PINNED_SUBMISSION.reply(message.author.name + ": " + message.attachments[0]['url'])
 		
 async def on_submission(message, category):
 	if message.content.startswith('//' + category):
@@ -73,7 +91,16 @@ async def on_submission(message, category):
 			except Exception as e:
 				await discord_client.send_message(message.channel, "Invalid subreddit")
 				print(e)
-	
+
+async def on_poll(message):
+	if message.content.startswith('//poll'):
+		tokens = message.content.split(" ", 1)
+		if len(tokens) == 1:
+			await discord_client.send_message(message.channel, "What's the question?")
+		else:
+			sent_message = await discord_client.send_message(message.channel, tokens[1] + "\n\n \N{THUMBS UP SIGN} YES \n\n \N{THUMBS DOWN SIGN} NO")
+			await discord_client.add_reaction(sent_message, '\N{THUMBS UP SIGN}')
+			await discord_client.add_reaction(sent_message, '\N{THUMBS DOWN SIGN}')
 
 def unstickied_submission(subreddit, listing):
 	for submission in getattr(subreddit, listing)():
