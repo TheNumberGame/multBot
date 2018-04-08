@@ -98,7 +98,10 @@ async def on_poll(message):
 		if len(tokens) == 1:
 			await discord_client.send_message(message.channel, "What's the question?")
 		else:
-			sent_message = await discord_client.send_message(message.channel, tokens[1] + "\n\n \N{THUMBS UP SIGN} YES \n\n \N{THUMBS DOWN SIGN} NO")
+			embed = discord.Embed(title=tokens[1], color=0x0000ff)
+			embed.add_field(name="Yes", value=":thumbsup:", inline=True)
+			embed.add_field(name="No", value=":thumbsdown:", inline=True)
+			sent_message = await discord_client.send_message(message.channel, embed=embed)
 			await discord_client.add_reaction(sent_message, '\N{THUMBS UP SIGN}')
 			await discord_client.add_reaction(sent_message, '\N{THUMBS DOWN SIGN}')
 
